@@ -1,47 +1,105 @@
 import React, { useState, useEffect } from "react";
-const StopWatch = () => {
-  const [time, setTime] = useState(0);
+import Lap from './Lap'
+export default function StopWatch() { 
+  const [seconds, setSeconds] = useState(0); 
+  const [minutes, setMinutes] = useState(0); 
+  const [hours, setHours] = useState(0); 
+  const [miliSeconds, setMiliSeconds] = useState(0); 
+  const [laps, setLaps] = useState([]); 
+  const [isRunning, setIsRunning] = useState(false); 
 
-  const [isRunning, setIsRunning] = useState(false);
+  const formatWithLeadingZero = (number) => { 
+      if (number < 10) return "0" + number; 
+      else return number.toString(); 
+  }; 
 
-  useEffect(() => {
-    let intervalId;
-    if (isRunning) {
-      intervalId = setInterval(() => setTime(time + 1), 10);
-    }
-    return () => clearInterval(intervalId);
-  }, [isRunning, time]);
+  useEffect(() => { 
+      let interval; 
 
-  const minutes = Math.floor((time % 360000) / 6000);
+      if (isRunning) { 
+          interval = setInterval(() => { 
+              setMiliSeconds((miliSeconds) => { 
+                  if (miliSeconds >= 99) { 
+                      setSeconds((seconds) => { 
+                          if (seconds >= 59) { 
+                              setMinutes((minutes) => { 
+                                  if (minutes >= 59) { 
+                                      setHours((prevHours) => prevHours + 1); 
+                                      return 0; 
+                                  } else { 
+                                      return minutes + 1; 
+                                  } 
+                              }); 
+                              return 0; 
+                          } else { 
+                              return seconds + 1; 
+                          } 
+                      }); 
+                      return 0; 
+                  } else { 
+                      return miliSeconds + 1; 
+                  } 
+              }); 
+          }, 10); 
+      } 
+      return () => clearInterval(interval); 
+  }, [isRunning]); 
 
-  const seconds = Math.floor((time % 6000) / 100);
+  const handleStart = () => { 
+      setIsRunning(true); 
+  }; 
 
-  const milliseconds = time % 100;
+  const handlePause = () => { 
+      setIsRunning(false); 
+  }; 
 
-  const startAndStop = () => {
-    setIsRunning(!isRunning);
-  };
+  const handleLap = () => { 
+      const lapTime = 
+          formatWithLeadingZero(hours) + 
+          ":" + 
+          formatWithLeadingZero(minutes) + 
+          ":" + 
+          formatWithLeadingZero(seconds) + 
+          "." + 
+          formatWithLeadingZero(miliSeconds); 
+      setLaps((prevLaps) => [...prevLaps, lapTime]); 
+  }; 
 
-  const reset = () => {
-    setTime(0);
-  };
-  return (
-    <div className="stopwatch-container">
-      <p className="stopwatch-time">
-        {minutes.toString().padStart(2, "0")}:
-        {seconds.toString().padStart(2, "0")}:
-        {milliseconds.toString().padStart(2, "0")}
-      </p>
-      <div className="stopwatch-buttons">
-        <button className="stopwatch-button" onClick={startAndStop}>
-          {isRunning ? "Stop" : "Start"}
-        </button>
-        <button className="stopwatch-button" onClick={reset}>
-          Reset
-        </button>
-      </div>
-    </div>
-  );
-};
+  const handleReset = () => { 
+      setIsRunning(false); 
+      setMiliSeconds(0); 
+      setSeconds(0); 
+      setMinutes(0); 
+      setHours(0); 
+      setLaps([]); 
+  }; 
 
-export default StopWatch;
+  return ( 
+      <div className="container"> 
+          <div className="timeDisplay"> 
+              {formatWithLeadingZero(hours)} : {formatWithLeadingZero(minutes)} :{" "} 
+              {formatWithLeadingZero(seconds)} : {formatWithLeadingZero(miliSeconds)} 
+          </div> 
+          <div className="buttons"> 
+              <button 
+                  className="btn"
+                  onClick={handleStart} 
+                  disabled={isRunning} 
+                  style={{ cursor: isRunning ? "not-allowed" : "pointer" }} 
+              > 
+                  Start 
+              </button> 
+              <button className="btn" onClick={handlePause}> 
+                  Pause 
+              </button> 
+              <button className="btn" onClick={handleLap}> 
+                  Lap 
+              </button> 
+              <button className="btn" onClick={handleReset}> 
+                  Reset 
+              </button> 
+          </div> 
+          <Lap laps={laps} /> 
+      </div> 
+  ); 
+} 
